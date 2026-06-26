@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Калькулятор проведённых уроков</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 760px;
+      margin: 40px auto;
+      background: #f4f6f8;
+      padding: 20px;
+      color: #1f2937;
+    }
+
+    .box {
+      background: white;
+      padding: 26px;
+      border-radius: 18px;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+    }
+
+    h1 {
+      font-size: 26px;
+      margin: 0 0 8px;
+    }
+
+    .hint {
+      color: #6b7280;
+      margin: 0 0 18px;
+      line-height: 1.4;
+    }
+
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+
+    input, button {
+      width: 100%;
+      padding: 11px;
+      margin-top: 6px;
+      border-radius: 10px;
+      border: 1px solid #d1d5db;
+      font-size: 15px;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .days {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .days label {
+      font-weight: normal;
+      background: #f1f3f5;
+      padding: 10px;
+      border-radius: 10px;
+      margin: 0;
+    }
+
+    .days input {
+      width: auto;
+      margin-right: 8px;
+    }
+
+    .holiday-add {
+      display: grid;
+      grid-template-columns: 1fr 190px;
+      gap: 10px;
+      align-items: end;
+    }
+
+    button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+
+    button:hover { background: #1d4ed8; }
+
+    .secondary-btn {
+      margin-top: 6px;
+      background: #374151;
+    }
+
+    .secondary-btn:hover { background: #111827; }
+
+    .result {
+      margin-top: 20px;
+      padding: 16px;
+      background: #e8f2ff;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: bold;
+      line-height: 1.5;
+    }
+
+    .list {
+      margin-top: 10px;
+      padding: 0;
+      list-style: none;
+    }
+
+    .list li {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      padding: 9px 10px;
+      border-radius: 10px;
+      margin-bottom: 7px;
+      font-size: 14px;
+    }
+
+    .remove {
+      width: auto;
+      margin: 0;
+      padding: 6px 10px;
+      background: #ef4444;
+      font-size: 13px;
+    }
+
+    .remove:hover { background: #dc2626; }
+
+    details {
+      margin-top: 18px;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+    summary {
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .auto-list {
+      columns: 2;
+      margin-top: 12px;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 600px) {
+      body { margin: 0; padding: 12px; }
+      .row, .holiday-add, .days { grid-template-columns: 1fr; }
+      .auto-list { columns: 1; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="box">
+  <h1>Калькулятор проведённых уроков</h1>
+  <p class="hint">
+    Программа считает занятия по выбранным дням недели и автоматически исключает официальные праздничные дни РФ за 2023–2036 годы.
+    Дополнительные каникулы или переносы можно добавить вручную.
+  </p>
+
+  <div class="row">
+    <div>
+      <label>Дата начала занятий:</label>
+      <input type="date" id="startDate" value="2026-09-01">
+    </div>
+
+    <div>
+      <label>Дата окончания занятий:</label>
+      <input type="date" id="endDate" value="2027-05-31">
+    </div>
+  </div>
+
+  <label>Дни занятий:</label>
+  <div class="days">
+    <label><input type="checkbox" value="1"> Понедельник</label>
+    <label><input type="checkbox" value="2"> Вторник</label>
+    <label><input type="checkbox" value="3" checked> Среда</label>
+    <label><input type="checkbox" value="4"> Четверг</label>
+    <label><input type="checkbox" value="5"> Пятница</label>
+    <label><input type="checkbox" value="6"> Суббота</label>
+  </div>
+
+  <label>Добавить дополнительный праздник / каникулы:</label>
+  <div class="holiday-add">
+    <input type="date" id="customHolidayDate">
+    <button class="secondary-btn" onclick="addCustomHoliday()">Добавить праздник</button>
+  </div>
+
+  <ul class="list" id="customHolidayList"></ul>
+
+  <button onclick="calculateLessons()">Рассчитать</button>
+
+  <div class="result" id="result">Результат: —</div>
+
+  <details>
+    <summary>Показать автоматические праздники в выбранном периоде</summary>
+    <div class="auto-list" id="automaticHolidayList"></div>
+  </details>
+</div>
+
+<script src="calendar.js"></script>
+<script>
+  let customHolidays = [];
+
+  function addCustomHoliday() {
+    const input = document.getElementById("customHolidayDate");
+    const date = input.value;
+
+    if (!date) return;
+
+    if (!customHolidays.includes(date)) {
+      customHolidays.push(date);
+      customHolidays.sort();
+    }
+
+    input.value = "";
+    renderCustomHolidays();
+  }
+
+  function removeCustomHoliday(date) {
+    customHolidays = customHolidays.filter(item => item !== date);
+    renderCustomHolidays();
+  }
+
+  function renderCustomHolidays() {
+    const list = document.getElementById("customHolidayList");
+    list.innerHTML = "";
+
+    customHolidays.forEach(date => {
+      const li = document.createElement("li");
+      li.innerHTML = `<span>${date}</span><button class="remove" onclick="removeCustomHoliday('${date}')">Удалить</button>`;
+      list.appendChild(li);
+    });
+  }
+
+  function renderAutomaticHolidayList(holidays, startDate, endDate) {
+    const container = document.getElementById("automaticHolidayList");
+    const items = Object.entries(holidays)
+      .filter(([date]) => {
+        const current = parseLocalDate(date);
+        return current >= startDate && current <= endDate;
+      })
+      .sort(([a], [b]) => a.localeCompare(b));
+
+    if (items.length === 0) {
+      container.innerHTML = "Нет автоматических праздников в выбранном периоде.";
+      return;
+    }
+
+    container.innerHTML = items
+      .map(([date, name]) => `<div>${date} — ${name}</div>`)
+      .join("");
+  }
+
+  function calculateLessons() {
+    const startValue = document.getElementById("startDate").value;
+    const endValue = document.getElementById("endDate").value;
+
+    if (!startValue || !endValue) {
+      document.getElementById("result").innerText = "Заполните даты";
+      return;
+    }
+
+    const selectedDays = Array.from(
+      document.querySelectorAll(".days input:checked")
+    ).map(input => Number(input.value));
+
+    if (selectedDays.length === 0) {
+      document.getElementById("result").innerText = "Выберите дни занятий";
+      return;
+    }
+
+    const startDate = parseLocalDate(startValue);
+    const endDate = parseLocalDate(endValue);
+
+    if (startDate > endDate) {
+      document.getElementById("result").innerText = "Дата начала больше даты окончания";
+      return;
+    }
+
+    const automaticHolidays = getAutomaticHolidaysBetweenYears(startDate, endDate);
+    renderAutomaticHolidayList(automaticHolidays, startDate, endDate);
+
+    const allHolidayDates = new Set([
+      ...Object.keys(automaticHolidays),
+      ...customHolidays
+    ]);
+
+    let totalLessons = 0;
+    let skippedHolidays = 0;
+    let currentDate = new Date(startDate);
+
+    while (currentDate <= endDate) {
+      const dayOfWeek = currentDate.getDay();
+      const dateString = formatLocalDate(currentDate);
+      const isLessonDay = selectedDays.includes(dayOfWeek);
+      const isHoliday = allHolidayDates.has(dateString);
+
+      if (isLessonDay && !isHoliday) totalLessons++;
+      if (isLessonDay && isHoliday) skippedHolidays++;
+
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    document.getElementById("result").innerHTML =
+      `Количество уроков: ${totalLessons}<br>Не проведено из-за праздников/каникул: ${skippedHolidays}`;
+  }
+
+  renderCustomHolidays();
+  calculateLessons();
+</script>
+
+</body>
+</html>
